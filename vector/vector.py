@@ -116,7 +116,7 @@ def vcomp(comps):
         #any of the input comps not having a .shape attribute.
         comps=[np.array([x]) for x in comps]
         axis=0
-    return np.stack(comps, axis=axis)
+    return np.stack(np.broadcast_arrays(*comps), axis=axis)
 
 def vdecomp(v, m=None, minlen=None, maxlen=None):
     """
