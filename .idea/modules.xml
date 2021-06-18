@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../KalmanGain/.idea/KalmanGain.iml" filepath="$PROJECT_DIR$/../KalmanGain/.idea/KalmanGain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../RocketHeatShield/.idea/RocketHeatShield.iml" filepath="$PROJECT_DIR$/../RocketHeatShield/.idea/RocketHeatShield.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../picturebox/.idea/picturebox.iml" filepath="$PROJECT_DIR$/../picturebox/.idea/picturebox.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/vector.iml" filepath="$PROJECT_DIR$/.idea/vector.iml" />
+    </modules>
+  </component>
+</project>
