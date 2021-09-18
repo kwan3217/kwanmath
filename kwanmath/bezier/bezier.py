@@ -61,3 +61,26 @@ def flatten(P:np.array,tol:float=1)->np.array:
     else:
         P0,P1=split(P,0.5)
         return np.hstack((flatten(P0,tol),flatten(P1,tol)))
+
+def arc_l90(theta:float)->np.array:
+    """
+    Create a cubic Bezier curve which approximates a circular arc. Based on
+    https://pomax.github.io/bezierinfo/#circles_cubic .
+
+    :param theta: Angle of arc. The arc start on the +X axis and grows towards +Y. The math works up to
+    180deg, but the approximation is noticeably worse, so we recommend only
+    using this up to 90deg. At this angle, the maximum error between an actual circle and this curve
+    is 2.7e-4 (2.7 unit error on a circle with radius 10,000 units).
+    :return: Control points for a single Bezier curve which approximates the arc, in the form of a 2-row, 4-column
+             numpy array.
+    """
+    k=4*np.tan(theta/4)/3
+    c=np.cos(theta)
+    s=np.sin(theta)
+    result=np.zeros((2,4))
+    result[:,0]=(1,0)
+    result[:,1]=(1,k)
+    result[:,2]=(c+k*s,s-k*c)
+    result[:,3]=(c,s)
+    return result
+
