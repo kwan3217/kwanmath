@@ -27,8 +27,8 @@ def rot_axis(axis,theta):
     convention used in any other source.
 
     Body frame -- Imagine holding something
-    with an obvious orientation, like a doll or action
-    figure. It has a body frame such that it is
+    with an obvious orientation, like a mannequin. 
+    It has a body frame such that it is
     standing with its face pointing towards +X, left
     side towards +Y, head towards +Z and feet towards
     -Z. No matter how you turn the figure, the body
