@@ -42,7 +42,7 @@ def flatness(P:np.array)->float:
     u[w]=v[w]
     return np.sum(u)
 
-def split(P:np.array,t:float)->tuple[np.array]:
+def split(P:np.array,t:float)->tuple:
     p01=interp(P[:,0],P[:,1],t)
     p12=interp(P[:,1],P[:,2],t)
     p23=interp(P[:,2],P[:,3],t)
