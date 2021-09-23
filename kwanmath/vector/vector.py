@@ -191,29 +191,24 @@ def vcross(a, b):
     cz = ax * by - ay * bx
     return vcomp((cx,cy,cz))
 
-
-def linterp(x0, y0, x1, y1, x):
+#Generic functions, usable in this or other projects. No access to global state
+def vnormalize(a):
     """
-    Linear interpolation
-
-    :param x0: Input value at one end of line
-    :param y0: Output value which x0 maps onto
-    :param x1: Input value at other end of line
-    :param y1: Output value which x1 maps onto
-    :param x:  Input value(s)
-    :return:   Output value(s).
-
-    Note: All and only operators +,-,*, and / are used. Any type which supports
-          these may be used as parameters, including numpy arrays. In case arrays
-          are used, all broadcasting is supported and inputs must be compatible
-          by broadcasting.
-
-          The usual case is for x0,y0,x1,y1 to all be scalar and for x to be
-          either scalar or array, in which case the output will be the same size
-          and shape as the input x.
+    Calculate the unit vector in a given direction
+    :param a: vector to get direction from
+    :return: unit vector in given direction
     """
-    t = (x - x0) / (x1 - x0)
-    return (1 - t) * y0 + t * y1
+    return a/vlength(a)
+
+def vncross(a, b):
+    """
+    Normalized cross product
+    :param a: First cross product factor
+    :param b: Second cross product factor
+    :return: Unit vector in same direction as vcross(a,b)
+    """
+    return vnormalize(vcross(a, b))
+
 
 def vforce_proj(a,b,d):
     """

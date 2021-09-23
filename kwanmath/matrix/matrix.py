@@ -5,9 +5,11 @@ uses in other places
 
 * rot_x, rot_y, rot_z: Return a rotation matrix
   about one of the primary axes.
+* point_toward: Compute the point-toward transformation
 """
 
 import numpy as np
+from ..vector import vncross, vnormalize
 
 def rot_axis(axis,theta):
     """
@@ -123,4 +125,21 @@ def rot_z(theta):
     :return: Rotation matrix in form of (3,3) 2D numpy array
     """
     return rot_axis(2,theta)
+
+def point_toward(*, p_b, p_r, t_b, t_r):
+    """
+    Calculate the point-towards transform
+    :param p_b: Body frame point vector
+    :param p_r: Reference frame point vector
+    :param t_b: Body frame toward vector
+    :param t_r: Reference toward vector
+    :return: Mb2r which makes p_r=Mb2r@p_b true, and simultaneously minimizes vangle(t_r,Mb2r@t_b)
+    """
+    s_r=vncross(p_r, t_r)
+    u_r=vncross(p_r, s_r)
+    R=np.stack((vnormalize(p_r).transpose(), s_r.transpose(), u_r.transpose()), axis=2)
+    s_b=vncross(p_b, t_b)
+    u_b=vncross(p_b, s_b)
+    B=np.stack((vnormalize(p_b).transpose(), s_b.transpose(), u_b.transpose()), axis=2)
+    return R @ B.T
 

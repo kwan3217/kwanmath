@@ -14,9 +14,9 @@ setup(
     author='kwan3217',
     author_email='kwan3217@gmail.com',
     license='BSD 2-clause',
-    packages=['kwanmath.vector','kwanmath.bezier'],
+    packages=['kwanmath.vector','kwanmath.bezier','kwanmath.matrix','kwanmath.interp'],
     install_requires=[
-                      'numpy',
+                      'scipy',
                      ],
 
 )
