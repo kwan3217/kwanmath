@@ -14,7 +14,7 @@ setup(
     author='kwan3217',
     author_email='kwan3217@gmail.com',
     license='BSD 2-clause',
-    packages=['kwanmath']
+    packages=['kwanmath'],
     install_requires=[
                       'scipy',
                      ],
