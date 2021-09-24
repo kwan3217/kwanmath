@@ -2,6 +2,7 @@
 Interpolation functions the Kwan Systems way
 """
 from scipy.interpolate import interp1d
+import numpy as np
 
 def linterp(x0, y0, x1, y1, x, bound=False):
     """
@@ -55,9 +56,22 @@ class tableterp:
     """
     Acts like a function that returns a function.
     """
-    def __init__(self,x,y):
+    def __init__(self,x,y,smooth0=None,smooth1=None):
         self._x=x
-        self._y=y
+        if smooth0 is None:
+            self._y=y
+        else:
+            if len(y.shape)==1:
+                self._y=smooth(y,smooth0,smooth1)
+            elif len(y.shape)==2:
+                self._y=np.zeros(y.shape)
+                for i in range(y.shape[0]):
+                    self._y[i,:]=smooth(y[i,:],smooth0,smooth1)
+            elif len(y.shape) == 2:
+                self._y=np.zeros(y.shape)
+                for i in range(y.shape[1]):
+                    for j in range(y.shape[2]):
+                        self._y[:,i,j] = smooth(y[:,i,j],smooth0,smooth1)
         if len(self._y.shape)==2:
             self.axis = 1
         else:

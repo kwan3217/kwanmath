@@ -231,3 +231,20 @@ def vforce_proj(a,b,d):
         return k[...,np.newaxis,:]*a
     except:
         return k*a
+
+def rv(sv):
+    """
+    Position part of state vector
+    :param sv: Stack of state vectors, can be one in stack IE column vector
+    :return: Position part, will be stack matching sv
+    """
+    return sv[:3,:]
+
+def vv(sv):
+    """
+    Velocity part of state vector
+    :param sv: Stack of state vectors, can be one in stack IE column vector
+    :return: Position part, will be stack matching sv
+    """
+    return sv[3:,:]
+

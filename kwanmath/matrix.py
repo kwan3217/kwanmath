@@ -9,7 +9,7 @@ uses in other places
 """
 
 import numpy as np
-from ..vector import vncross, vnormalize
+from .vector import vncross, vnormalize
 
 def rot_axis(axis,theta):
     """
@@ -142,4 +142,39 @@ def point_toward(*, p_b, p_r, t_b, t_r):
     u_b=vncross(p_b, s_b)
     B=np.stack((vnormalize(p_b).transpose(), s_b.transpose(), u_b.transpose()), axis=2)
     return R @ B.T
+
+def Mtrans(M,*vs):
+    """
+    Transform a matrix or stack of matrices against a vector or stack of vectors
+    :param M: Matrix [rows,columns] or stack of matrices [stack,rows,columns]
+    :param v: Column vector [rows,1] or stack of vectors [rows,stack]
+    :return: Transformed vector(s)
+    If M and v are both singles, return a single column vector
+    If M is single and v is stack, return a stack of vectors, each one transformed against the (one and only) matrix
+    If M is stack, v must be stack, return a stack of vectors, each one transformed against the corresponding matrix
+    """
+    if len(M.shape)>2:
+        result=tuple([ (M @ (v.transpose().reshape(v.shape[1], v.shape[0], 1)))[:, :, 0].transpose() for v in vs])
+    else:
+        result=tuple([M @ v for v in vs])
+    if len(vs)==1:
+        result=result[0]
+    return result
+
+def Mr(Ms):
+    """
+    Get position part of state transformation matrix
+    :param Ms: Stack of state transformation matrices
+    :return: Position part, IE upper 3x3 of each matrix
+    """
+    return Ms[...,:3,:3]
+
+def Mv(Ms):
+    """
+    Get position part of state transformation matrix
+    :param Ms: Stack of state transformation matrices
+    :return: Position part, IE upper 3x3 of each matrix
+    """
+    return Ms[...,3:,3:]
+
 
