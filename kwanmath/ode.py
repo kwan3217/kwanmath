@@ -160,9 +160,9 @@ def fixed_step(f:Callable)->Callable:
     This should help reduce round-off error in tables when repeatedly calling
     an integrator for each row.
     """
-    def inner(t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None,*args,**kwargs):
-        n_step,t1,dt,fps=calc_fixed_step(t0,n_step,t1,dt,fps)
-        return f(*args,t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps,**kwargs)
+    def inner(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None,k:Any=None)->tuple[float,xtype]:
+        n_step,t1,dt,fps=calc_fixed_step(t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps)
+        return f(F,x0,t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps,k=k)
     return inner
 
 @fixed_step
