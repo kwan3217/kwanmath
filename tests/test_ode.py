@@ -38,9 +38,8 @@ def test_calc_fixed_step(in_t0,in_n_step,in_t1,in_dt,in_fps,ref_n_step,ref_t1,re
     assert out_fps==ref_fps
 
 
-def Fgrav(x, t, k):
+def Fgrav(x, mu):
     x, y, dx, dy = x
-    mu = k
     r = sqrt(x ** 2 + y ** 2)
     ddx = mu * x / r ** 3
     ddy = mu * y / r ** 3
@@ -48,8 +47,8 @@ def Fgrav(x, t, k):
 
 def test_euler():
     ref_t1=1
-    t1,x1=euler(Fgrav,x0=np.array([1.0,0.0,0.0,1.0]),t0=0.0,k=1.0,t1=ref_t1,fps=10)
+    t1,x1=euler(lambda x,t:Fgrav(x,1), x0=np.array([1.0,0.0,0.0,1.0]),t0=0.0,t1=ref_t1,fps=10)
 
 def test_rk4():
     ref_t1 = 1
-    t1, x1 = rk4(Fgrav, x0=np.array([1.0, 0.0, 0.0, 1.0]), t0=0.0, k=1.0, t1=ref_t1, fps=10)
+    t1, x1 = rk4(lambda x,t:Fgrav(x,1), x0=np.array([1.0, 0.0, 0.0, 1.0]), t0=0.0, t1=ref_t1, fps=10)

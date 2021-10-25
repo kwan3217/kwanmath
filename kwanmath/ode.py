@@ -20,9 +20,6 @@ of a state given the state. They are of the form F(x,t,k=None) where:
        The integrator doesn't care about the interpretation, but the caller and differential equation should agree.
    * t is the current time, which will always be a scalar. The function is allowed to use this to calculate
        derivatives which are functions of time as well as state (for instance throttle command of a rocket)
-   * k is the parameter, which may be any type, including scalar, string, numpy array, dict, or None.
-       Integrator functions don't use this variable, just pass it along. The caller of the integrator
-       just has to pass what the equation code expects.
 The return value must be a result with the same dimensionality as x, where each element in the result is the
 derivative of the corresponding element of the state with respect to time.
 
@@ -30,6 +27,25 @@ The equation code should treat all of its arguments as input-only, because it is
 changing the parameter will have on other substeps. If you wish to change something for internal use only, be
 careful about references -- for instance if k is a dict, doing k["foo"]=bar will change the parameter. Instead,
 do k=k.copy():k["foo"]=bar.
+
+You can use lambda functions as adapters to any existing function which calculates the derivative. For instance,
+say you have a gravity function Fgrav where mu is a parameter and there is no t argument, since there is no time
+dependence.
+
+def Fgrav(x, mu):
+    x, y, dx, dy = x
+    r = sqrt(x ** 2 + y ** 2)
+    ddx = mu * x / r ** 3
+    ddy = mu * y / r ** 3
+    return np.array([dx, dy, ddx, ddy])
+
+Instead of using Fgrav directly, use the following:
+
+lambda x,t:Fgrav(x,mu=47)
+
+You can use any callable that takes the right two parameters.
+
+
 
 All solvers have the general form solver(F,x0,k,t0=0,n_step=None,t1=None,dt=None...) with the following parameters:
 
@@ -160,13 +176,13 @@ def fixed_step(f:Callable)->Callable:
     This should help reduce round-off error in tables when repeatedly calling
     an integrator for each row.
     """
-    def inner(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None,k:Any=None)->tuple[float,xtype]:
+    def inner(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
         n_step,t1,dt,fps=calc_fixed_step(t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps)
-        return f(F,x0,t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps,k=k)
+        return f(F,x0,t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps)
     return inner
 
 @fixed_step
-def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None,k:Any=None)->tuple[float,xtype]:
+def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
     """
     Take a fixed number of steps in a numerical integration of a differential
     equation using the Euler method.
@@ -182,11 +198,11 @@ def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=Non
     """
     x1=x0*1
     for i in range(n_step):
-        x1+=dt*F(x=x1,k=k,t=t0+dt*i)
+        x1+=dt*F(x=x1,t=t0+dt*i)
     return t1,x1
 
 @fixed_step
-def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None,k:Any=None)->tuple[float,xtype]:
+def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
     """
     Take a fixed number of steps in a numerical integration of a differential equation using the
     fourth-order Runge-Kutta method.
@@ -202,9 +218,9 @@ def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,
     """
     xp=x0*1
     for i in range(n_step):
-        dx1=dt*F(xp      ,k,t0+dt*i     )
-        dx2=dt*F(xp+dx1/2,k,t0+dt*i+dt/2)
-        dx3=dt*F(xp+dx2/2,k,t0+dt*i+dt/2)
-        dx4=dt*F(xp+dx3  ,k,t0+dt*i+dt  )
+        dx1=dt*F(xp      ,t0+dt*i     )
+        dx2=dt*F(xp+dx1/2,t0+dt*i+dt/2)
+        dx3=dt*F(xp+dx2/2,t0+dt*i+dt/2)
+        dx4=dt*F(xp+dx3  ,t0+dt*i+dt  )
         xp=xp+(dx1+2*dx2+2*dx3+dx4)/6
     return t1,xp
