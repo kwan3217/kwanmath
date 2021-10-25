@@ -202,9 +202,9 @@ def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,
     """
     xp=x0*1
     for i in range(n_step):
-        dx1=dt*F(xp      ,k,t0+dt*i      )
-        dx2=dt*F(xp+dx1/2,k,t0+dt*i+ddt/2)
-        dx3=dt*F(xp+dx2/2,k,t0+dt*i+ddt/2)
-        dx4=dt*F(xp+dx3  ,k,t0+dt*i+ddt  )
+        dx1=dt*F(xp      ,k,t0+dt*i     )
+        dx2=dt*F(xp+dx1/2,k,t0+dt*i+dt/2)
+        dx3=dt*F(xp+dx2/2,k,t0+dt*i+dt/2)
+        dx4=dt*F(xp+dx3  ,k,t0+dt*i+dt  )
         xp=xp+(dx1+2*dx2+2*dx3+dx4)/6
     return t1,xp
