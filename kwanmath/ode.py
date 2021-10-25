@@ -3,7 +3,7 @@ Ordinary Differential Equation solvers. This solves first-order vector ordinary 
 any order vector equation can be reduced to first-order by adding more equations and state vector elements.
 
 Differential equations are themselves expressed as Python functions which calculate the derivative
-of a state given the state. They are of the form F(x,t,k=None) where:
+of a state given the state. They are of the form F(x,t) where:
    * x is the current state vector. This is mostly just subject to numpy broadcasting rules, allowing
        an interpretation from the following (possibly incomplete) list.
        - scalar, meaning the problem has a single-element state vector
@@ -24,13 +24,11 @@ The return value must be a result with the same dimensionality as x, where each 
 derivative of the corresponding element of the state with respect to time.
 
 The equation code should treat all of its arguments as input-only, because it is difficult to say what effect
-changing the parameter will have on other substeps. If you wish to change something for internal use only, be
-careful about references -- for instance if k is a dict, doing k["foo"]=bar will change the parameter. Instead,
-do k=k.copy():k["foo"]=bar.
+changing an argument will have on other substeps.
 
 You can use lambda functions as adapters to any existing function which calculates the derivative. For instance,
-say you have a gravity function Fgrav where mu is a parameter and there is no t argument, since there is no time
-dependence.
+say you have a gravity function Fgrav where mu is a parameter that is constant over an integration, and there is no t
+argument, since there is no time dependence.
 
 def Fgrav(x, mu):
     x, y, dx, dy = x
@@ -45,14 +43,11 @@ lambda x,t:Fgrav(x,mu=47)
 
 You can use any callable that takes the right two parameters.
 
-
-
-All solvers have the general form solver(F,x0,k,t0=0,n_step=None,t1=None,dt=None...) with the following parameters:
+All solvers have the general form solver(F,x0,t0=0,n_step=None,t1=None,dt=None...) with the following parameters:
 
 *F -- First-order vector differential equation
 *x0 - initial state. As noted above, this can be a scalar, vector, matrix, or stack of independent runs of any of these.
       For instance, you can do a point cloud by passing M different column vectors of size N in a 2D NxM array.
-*k - parameter to pass to differential equation
 *t0 - initial value of t. The integrator itself doesn't use this for its own calculations, but it does use it to
       initialize the value of t it passes to the differential equation.
 *n_step - Number of steps to take. Notice that the derivative function may be evaluated more times than this --
@@ -192,7 +187,6 @@ def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=Non
     :param nstep: Number of steps to take
     :param t1: final time value
     :param dt: Time step size
-    :param k: Optional parameter vector
     :return: A tuple (t1,x1) of the time and state at the end of the final step. State x1
              will have same dimensionality as the input x0
     """
@@ -212,7 +206,6 @@ def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,
     :param nstep: Number of steps to take
     :param t1: final time value
     :param dt: Time step size
-    :param k: Optional parameter vector
     :return: A tuple (t1,x1) of the time and state at the end of the final step. State x1
              will have same dimensionality as the input x0
     """
