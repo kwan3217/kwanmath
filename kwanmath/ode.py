@@ -76,7 +76,7 @@ import numpy as np
 xtype=Union[float,np.array]
 Ftype=Callable[[xtype,float,Any],xtype]
 
-def calc_fixed_step(t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[int,float,float,float]:
+def calc_fixed_step(*,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[int,float,float,float]:
     """
     Decorator which fills in the missing time step parameters
 
