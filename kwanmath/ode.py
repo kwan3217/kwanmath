@@ -3,9 +3,14 @@ Ordinary Differential Equation solvers. This solves first-order vector ordinary 
 any order vector equation can be reduced to first-order by adding more equations and state vector elements.
 
 Differential equations are themselves expressed as Python functions which calculate the derivative
-of a state given the state. They are of the form F(x,t) where:
-   * x is the current state vector. This is mostly just subject to numpy broadcasting rules, allowing
-       an interpretation from the following (possibly incomplete) list.
+of a state given the state. They are of the form F(t,y) where:
+   * t is the current value of the independent variable (time), which will always be a scalar. Many physical laws
+       expressed as differential equations *don't* depend on time, only on various elements of the current state.
+       You can do this by accepting but just not using t to calculate your derivatives. The function is allowed
+       to use this to calculate derivatives which are functions of time as well as state (for instance throttle command
+       of a rocket)
+   * y is the current value of the dependent variable (state vector). This is mostly just subject to numpy broadcasting
+       rules, allowing an interpretation from the following (possibly incomplete) list.
        - scalar, meaning the problem has a single-element state vector
        - stack of scalars, a 1D numpy array where each element represents an independent state,
        - row vector, a 1D numpy array which together represents a single state
@@ -18,10 +23,13 @@ of a state given the state. They are of the form F(x,t) where:
        - Multi-dimensional stack of matrices, a kD ...xNxM numpy array which represents a ... stack of independent
          NxM state matrices
        The integrator doesn't care about the interpretation, but the caller and differential equation should agree.
-   * t is the current time, which will always be a scalar. The function is allowed to use this to calculate
-       derivatives which are functions of time as well as state (for instance throttle command of a rocket)
-The return value must be a result with the same dimensionality as x, where each element in the result is the
-derivative of the corresponding element of the state with respect to time.
+
+The return value dy/dt must be a result with the same dimensionality as y, where each element in the result is the
+derivative of the corresponding element of the dependent variable with respect to the independent variable.
+
+We use t for the independent variable and y for the dependent variable, because x is ambiguous. Often in dynamics, we
+use x for the state vector which makes it dependent. Conversely when playing around with simple 1D problems, we use
+x as the independent variable and y as dependent, since this is how we plot it.
 
 The equation code should treat all of its arguments as input-only, because it is difficult to say what effect
 changing an argument will have on other substeps.
@@ -39,17 +47,17 @@ def Fgrav(x, mu):
 
 Instead of using Fgrav directly, use the following:
 
-lambda x,t:Fgrav(x,mu=47)
+lambda t,y:Fgrav(x,mu=47)
 
 You can use any callable that takes the right two parameters.
 
 All solvers have the general form solver(F,x0,t0=0,n_step=None,t1=None,dt=None...) with the following parameters:
 
 *F -- First-order vector differential equation
-*x0 - initial state. As noted above, this can be a scalar, vector, matrix, or stack of independent runs of any of these.
-      For instance, you can do a point cloud by passing M different column vectors of size N in a 2D NxM array.
 *t0 - initial value of t. The integrator itself doesn't use this for its own calculations, but it does use it to
       initialize the value of t it passes to the differential equation.
+*y0 - initial state. As noted above, this can be a scalar, vector, matrix, or stack of independent runs of any of these.
+      For instance, you can do a point cloud by passing M different column vectors of size N in a 2D NxM array.
 *n_step - Number of steps to take. Notice that the derivative function may be evaluated more times than this --
       for instance fourth-order Runge-Kutta will evaluate four times in a step, at the beginning, middle (twice)
       and end of the step.
@@ -65,16 +73,15 @@ from t1 such that the last step will exactly hit t1.
 The return value is a tuple of the actual time and state at the end of the last step, and the actual time is guaranteed
 to be >=t1. In many cases it will be exactly ==t1.
 
-If you want a table of values, do it like this: The first row is t0,x0. Each subsequent row is
-tn,xn=solver(xnm1,t0=tnm1,t1=desired_tn,...). If you make lists, you can do it like this:
+If you want a table of values, do it like this: The first row is t0,y0. Each subsequent row is
+tn,yn=solver(t0=tnm1,y0=ynm1,t1=desired_tn,...). If you make lists, you can do it like this:
 
 ts=[t0]
-xs=[x0]
+ys=[y0]
 for desired_tn in ...:
-    t,x=solver(x[-1],t0=t[-1],t1=desired_tn)
+    t,y=solver(t0=t[-1],y0=y[-1],t1=desired_tn)
     ts.append(t)
-    xs.append(x)
-
+    ys.append(y)
 
 This form is intended to allow adaptive step methods. In this case, you might pass an initial n_step and/or dt, but
 also some error tolerance. The step size is adjusted to give the largest step which satisfies the tolerance.
