@@ -91,8 +91,8 @@ from typing import Union,Any
 from collections.abc import Callable
 import numpy as np
 
-xtype=Union[float,np.array]
-Ftype=Callable[[xtype,float,Any],xtype]
+ytype=Union[float, np.array]
+Ftype=Callable[[ytype, float, Any], ytype]
 
 def calc_fixed_step(*,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[int,float,float,float]:
     """
@@ -178,13 +178,13 @@ def fixed_step(f:Callable)->Callable:
     This should help reduce round-off error in tables when repeatedly calling
     an integrator for each row.
     """
-    def inner(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
+    def inner(F:Ftype, t0:float=0, y0:ytype=None, n_step:int=None, t1:float=None, dt:float=None, fps:float=None)->tuple[float, ytype]:
         n_step,t1,dt,fps=calc_fixed_step(t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps)
-        return f(F,x0,t0=t0,n_step=n_step,t1=t1,dt=dt,fps=fps)
+        return f(F,t0=t0,y0=y0,n_step=n_step,t1=t1,dt=dt,fps=fps)
     return inner
 
 @fixed_step
-def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
+def euler(F:Ftype, t0:float=0, y0:ytype=None, n_step:int=None, t1:float=None, dt:float=None, fps:float=None)->tuple[float, ytype]:
     """
     Take a fixed number of steps in a numerical integration of a differential
     equation using the Euler method.
@@ -197,13 +197,13 @@ def euler(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=Non
     :return: A tuple (t1,x1) of the time and state at the end of the final step. State x1
              will have same dimensionality as the input x0
     """
-    x1=x0*1
+    y1=y0*1
     for i in range(n_step):
-        x1+=dt*F(x=x1,t=t0+dt*i)
-    return t1,x1
+        y1+=dt*F(t=t0+dt*i,y=y1)
+    return t1,y1
 
 @fixed_step
-def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,fps:float=None)->tuple[float,xtype]:
+def rk4(F:Ftype, t0:float=0, y0:ytype=None, n_step:int=None, t1:float=None, dt:float=None, fps:float=None)->tuple[float, ytype]:
     """
     Take a fixed number of steps in a numerical integration of a differential equation using the
     fourth-order Runge-Kutta method.
@@ -216,11 +216,28 @@ def rk4(F:Ftype,x0:xtype,t0:float=0,n_step:int=None,t1:float=None,dt:float=None,
     :return: A tuple (t1,x1) of the time and state at the end of the final step. State x1
              will have same dimensionality as the input x0
     """
-    xp=x0*1
+    yp=y0*1
     for i in range(n_step):
-        dx1=dt*F(xp      ,t0+dt*i     )
-        dx2=dt*F(xp+dx1/2,t0+dt*i+dt/2)
-        dx3=dt*F(xp+dx2/2,t0+dt*i+dt/2)
-        dx4=dt*F(xp+dx3  ,t0+dt*i+dt  )
-        xp=xp+(dx1+2*dx2+2*dx3+dx4)/6
-    return t1,xp
+        dy1=dt*F(t0+dt*i     ,yp      )
+        dy2=dt*F(t0+dt*i+dt/2,yp+dy1/2)
+        dy3=dt*F(t0+dt*i+dt/2,yp+dy2/2)
+        dy4=dt*F(t0+dt*i+dt  ,yp+dy3  )
+        yp=yp+(dy1+2*dy2+2*dy3+dy4)/6
+    return t1,yp
+
+def table(integrator:Callable, F:Ftype, t0:float=0, y0:ytype=None, n_step:int=None, dt_row:float=None, dt:float=None, fps:float=None, n_rows:int=None, t1:float=None):
+    if dt_row is None:
+        dt_row=(t1-t0)/n_rows
+    elif n_rows is None:
+        n_rows=(t1-t0)/dt_row
+    else:
+        t1=t0+n_rows*dt_row
+    ts=[t0]
+    ys=[y0]
+    for i_row in range(n_rows):
+        t,y=integrator(F,t0=ts[-1],y0=ys[-1],n_step=n_step,t1=ts[-1]+dt_row,dt=dt,fps=fps)
+        ts.append(t)
+        ys.append(y)
+    return ts,ys
+
+

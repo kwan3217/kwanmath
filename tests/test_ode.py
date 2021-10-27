@@ -47,8 +47,8 @@ def Fgrav(x, mu):
 
 def test_euler():
     ref_t1=1
-    t1,x1=euler(lambda x,t:Fgrav(x,1), x0=np.array([1.0,0.0,0.0,1.0]),t0=0.0,t1=ref_t1,fps=10)
+    t1,y1=euler(lambda t,y:Fgrav(y,1), t0=0.0,y0=np.array([1.0,0.0,0.0,1.0]),t1=ref_t1,fps=10)
 
 def test_rk4():
     ref_t1 = 1
-    t1, x1 = rk4(lambda x,t:Fgrav(x,1), x0=np.array([1.0, 0.0, 0.0, 1.0]), t0=0.0, t1=ref_t1, fps=10)
+    t1, y1 = rk4(lambda t,y:Fgrav(y,1), t0=0.0, y0=np.array([1.0, 0.0, 0.0, 1.0]), t1=ref_t1, fps=10)
