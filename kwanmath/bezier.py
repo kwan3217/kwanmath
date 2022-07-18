@@ -13,7 +13,14 @@ def deCasteljau(P:np.array,t:float)->np.array:
             nP[:,i]=interp(P[:,i],P[:,i+1],t)
         return deCasteljau(nP,t)
 
-def B(i:int,t:float)->float:
+def B3(i:int,t:float)->float:
+    """
+    Bezier (Bernstein) polynomials for cubic Bezier functions
+
+    :param i: Index number. B3(0,t) goes with control point 0, B3(1,t) goes with point 1, etc.
+    :param t: Bezier parameter. Normally varies from 0 to 1, but can be any real number
+    :return: Value of the basis function, will be between 0 and 1 if t is between 0 and 1.
+    """
     if i==0:
         return (1-t)**3
     elif i==1:
@@ -24,10 +31,17 @@ def B(i:int,t:float)->float:
         return t**3
 
 def bezier(P:np.array,t:float)->np.array:
-    return (P[:,0]*B(0,t)+
-            P[:,1]*B(1,t)+
-            P[:,2]*B(2,t)+
-            P[:,3]*B(3,t))
+    """
+    Evaluate cubic Bezier curve at a given parameter value
+
+    :param P: Control points, an Nx4 numpy array
+    :param t: Bezier parameter, usually between 0 and 1
+    :return: Point on Bezier curve, an Nx1 (column vector) 2D numpy array
+    """
+    return (P[:,0]*B3(0,t)+
+            P[:,1]*B3(1,t)+
+            P[:,2]*B3(2,t)+
+            P[:,3]*B3(3,t))
 
 def flatness(P:np.array)->float:
     """
@@ -35,6 +49,8 @@ def flatness(P:np.array)->float:
     From https://www.joshondesign.com/2018/07/11/bezier-curves and
     https://hcklbrrfnn.wordpress.com/2012/08/20/piecewise-linear-approximation-of-bezier-curves/
 
+    :param P: Control points, an Nx4 numpy array
+    :return: Estimate of maximum distance between curve and line between endpoints
     """
     u=(3*P[:,1]-2*P[:,0]-P[:,3])**2
     v=(3*P[:,2]-2*P[:,3]-P[:,0])**2
@@ -43,6 +59,12 @@ def flatness(P:np.array)->float:
     return np.sum(u)
 
 def split(P:np.array,t:float)->tuple:
+    """
+    Split a cubic Bezier curve at a given parameter value
+    :param P: Input control points, an Nx4 numpy array
+    :param t: Parameter value to split at
+    :return: A tuple of two Nx4 numpy arrays, each describing a portion of the curve before or after the split
+    """
     p01=interp(P[:,0],P[:,1],t)
     p12=interp(P[:,1],P[:,2],t)
     p23=interp(P[:,2],P[:,3],t)
@@ -55,6 +77,10 @@ def flatten(P:np.array,tol:float=1)->np.array:
     """
     Return a polyline which approximates the given cubic Bezier curve to within
     the given tolerance
+
+    :param P: Input control points, an Nx4 numpy array
+    :param tol: Flatness tolerance. Maximum distance between polyline and true curve should be about this distance
+    :return: NxM numpy array, where each column is a point on the polyline. M can be any positive integer greater than 2
     """
     if flatness(P)<tol:
         return np.hstack((P[:,0],P[:,3]))
