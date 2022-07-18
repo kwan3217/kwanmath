@@ -36,6 +36,18 @@ def linterp(x0, y0, x1, y1, x, bound=False):
     t = (x - x0) / (x1 - x0)
     return (1 - t) * y0 + t * y1
 
+def trap(x0,x1,x2,x3,y0,y1,x):
+    if x<x0:
+        return y0
+    elif x<x1:
+        return linterp(x0,y0,x1,y1,x)
+    elif x<x2:
+        return y1
+    elif x<x3:
+        return linterp(x2,y1,x3,y0,x)
+    else:
+        return y0
+
 def smooth(s,p0,p1):
     """
     Do a boxcar average on a 1D dataset
