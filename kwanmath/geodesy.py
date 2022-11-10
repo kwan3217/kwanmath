@@ -4,22 +4,44 @@ Geodesy and gravity calculations
 from .vector import vdecomp, vlength, vcomp, rv
 import numpy as np
 
-def xyz2llr(sv):
+def xyz2llr(sv,deg=False):
     """
     Calculate spherical coordinates of state
     :param sv: State vector, can be stack
+    :param deg: If true, return angles in degrees instead of radians
     :return: tuple of (lon,lat,r). Each will be an array iff sv is a stack
     """
     x,y,z=vdecomp(rv(sv))
     r=vlength(rv(sv))
     lat=np.arcsin(z/r)
     lon=np.arctan2(y,x)
+    if deg:
+        lat=np.rad2deg(lat)
+        lon=np.rad2deg(lon)
     return(lon,lat,r)
 
-def llr2xyz(*,latd,lond,r):
-    x=r*np.cos(np.radians(latd))*np.cos(np.radians(lond))
-    y=r*np.cos(np.radians(latd))*np.sin(np.radians(lond))
-    z=r*np.sin(np.radians(latd))
+def llr2xyz(*,lat,lon,r=1.0,deg=True):
+    """
+    Calculate rectangular coordinates from spherical coordinates
+
+    :param lat: Planetocentric latitude
+    :param lon: Planetocentric longitude
+    :param r: Radius
+    :param deg: True if latitude and longitude are in degrees
+    :return: Rectangular coordinates
+
+    Note: Uses array operations. All inputs may be array, but must be broadcastable against each other.
+    """
+    if deg:
+        lat=np.deg2rad(lat)
+        lon=np.deg2rad(lon)
+    clat=np.cos(lat)
+    clon=np.cos(lon)
+    slat=np.sin(lat)
+    slon=np.sin(lon)
+    x=r*clat*clon
+    y=r*clat*slon
+    z=r*slat
     return vcomp((x,y,z))
 
 def aJ2(svf,*,j2,gm,re):
