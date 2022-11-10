@@ -36,13 +36,6 @@ def linterp(x0, y0, x1, y1, x, bound=False):
     t = (x - x0) / (x1 - x0)
     return (1 - t) * y0 + t * y1
 
-def blinterp(x0,y0,x1,y1,x):
-    y=linterp(x0,y0,x1,y1,x)
-    if y<y0 and y<y1:
-        y=y0 if y0<y1 else y1
-    if y>y0 and y>y1:
-        y=y0 if y0>y1 else y1
-    return y
 
 def trap(x0,x1,x2,x3,y0,y1,x):
     if x<x0:
