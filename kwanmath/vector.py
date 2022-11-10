@@ -118,6 +118,22 @@ def vcomp(comps):
         axis=0
     return np.stack(np.broadcast_arrays(*comps), axis=axis)
 
+def maybe_scalar(x):
+    """
+    If passed in an array with only one element, return that element. Otherwise
+    return the whole array.
+    :param x: numpy array that may be scalar. If it's already a scalar (IE doesn't
+    have a .shape property) treat it as a one-element array
+    :return: If passed an array with one element, return that element. If passed
+    a non-array, return it. If passed an array with more than one element, return
+    the whole array.
+    """
+    if len(x.shape)==0:
+        return x
+    if np.product(x.shape)==1:
+        return np.reshape(x,(-1,))[0]
+    return x
+
 def vdecomp(v, m=None, minlen=None, maxlen=None):
     """
     Decompose a vector into components. an nD stack of m-element vectors will return a tuple with up to m elements,
@@ -166,7 +182,7 @@ def vdecomp(v, m=None, minlen=None, maxlen=None):
     efflen = v.shape[-2 if ndStack else 0]
     if maxlen is not None and maxlen < efflen:
         efflen = maxlen
-    result = tuple([v[..., i, :] if ndStack else v[i, ...] for i in range(efflen)])
+    result = tuple([maybe_scalar(v[..., i, :] if ndStack else v[i, ...]) for i in range(efflen)])
     if minlen is not None and minlen > efflen:
         result = result + (0,) * (minlen - efflen)
     return result
