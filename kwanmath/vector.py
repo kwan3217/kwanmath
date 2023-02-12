@@ -67,6 +67,16 @@ def vlength(v, array=False):
     """
     return np.sqrt(vdot(v, v, array))
 
+
+def vnormalize(v):
+    """
+    Compute the normalized (unit-length) vector(s) parallel to the given vector(s)
+    :param v: Vector or stack of vectors
+    :return: Vector or stack of vectors with same direction but unit length
+    """
+    return v/vlength(v)
+
+
 def vangle(a, b, array=False):
     """
     Compute the angle between two vectors
@@ -85,10 +95,10 @@ def vangle(a, b, array=False):
            is out of range, it is only out by a small amount.
     """
     arg=vdot(a, b, array) / vlength(a, array) / vlength(b, array)
-    try:
+    if np.ndim(arg)>0:
         arg[np.where(arg<-1)]=-1
         arg[np.where(arg> 1)]= 1
-    except TypeError:
+    else:
         if arg<-1:
             arg=-1
         if arg> 1:
@@ -116,25 +126,9 @@ def vcomp(comps):
         #any of the input comps not having a .shape attribute.
         comps=[np.array([x]) for x in comps]
         axis=0
-    return np.stack(np.broadcast_arrays(*comps), axis=axis)
+    return np.stack(comps, axis=axis)
 
-def maybe_scalar(x):
-    """
-    If passed in an array with only one element, return that element. Otherwise
-    return the whole array.
-    :param x: numpy array that may be scalar. If it's already a scalar (IE doesn't
-    have a .shape property) treat it as a one-element array
-    :return: If passed an array with one element, return that element. If passed
-    a non-array, return it. If passed an array with more than one element, return
-    the whole array.
-    """
-    if len(x.shape)==0:
-        return x
-    if np.product(x.shape)==1:
-        return np.reshape(x,(-1,))[0]
-    return x
-
-def vdecomp(v, m=None, minlen=None, maxlen=None):
+def vdecomp(v, m=None, minlen=None, maxlen=None, array=False):
     """
     Decompose a vector into components. an nD stack of m-element vectors will return a tuple with up to m elements,
     each of which will be an nD stack of scalars
@@ -150,6 +144,9 @@ def vdecomp(v, m=None, minlen=None, maxlen=None):
     :param m: If passed, treat the input as if it were an nD stack of m-element vectors. If the actual
               stack has more components, don't return them. If it has less, return scalar zeros for the
               missing components
+    :param array: If true and passed a single vector, return a
+        numpy 1D array result. Otherwise you will get a scalar result if you pass
+        in single vector operands. No effect if passed stacks as either operand
     :return: A tuple. Each element is a vector component. Vector components pulled from the vector will be
         an nD stack of scalars, a numpy nD array with shape (n_stack0,n_stack1,...,n_stackn-2,n_stackn-1).
         Vector components which are made up will be scalar zeros.
@@ -164,15 +161,10 @@ def vdecomp(v, m=None, minlen=None, maxlen=None):
         #OR
 
         v0=np.zeros((3,50)) #Initial conditions for 50 trajectories
-
         t=np.arange(24)     #Time steps
-
         v=rk4(x0=v0,t=t)    #Numerically integrate multiple trajectories. Result shape will be (t.size,)+v0.shape,
-
                             #IE (24,3,50)
-
-        x,y,z=vcomp(v) #after this, x, y, and z are each numpy arrays of shape (24,50)
-
+        x,y,z=vdecomp(v) #after this, x, y, and z are each numpy arrays of shape (24,50)
     """
     if maxlen is None and m is not None:
         maxlen = m
@@ -182,9 +174,13 @@ def vdecomp(v, m=None, minlen=None, maxlen=None):
     efflen = v.shape[-2 if ndStack else 0]
     if maxlen is not None and maxlen < efflen:
         efflen = maxlen
-    result = tuple([maybe_scalar(v[..., i, :] if ndStack else v[i, ...]) for i in range(efflen)])
+    result = tuple([v[..., i, :] if ndStack else v[i, ...] for i in range(efflen)])
     if minlen is not None and minlen > efflen:
-        result = result + (0,) * (minlen - efflen)
+        result = result + tuple([np.zeros(1) for i in range(minlen - efflen)])
+    if result[0].size == 1 and not array:
+        result = tuple([x.ravel()[0] for x in result])
+    if np.isscalar(result[0]) and array:
+        result = np.array([result])
     return result
 
 def vcross(a, b):
@@ -199,6 +195,7 @@ def vcross(a, b):
     If either of the input vectors have fewer than three components, the extra components
     are made up and assumed to be zero. If either input has more than three components,
     the extra components are ignored. The result will always have three components.
+    Inputs a and b may be row vectors, but in this case, the result is a column vector.
     """
     (ax, ay, az) = vdecomp(a, m=3)
     (bx, by, bz) = vdecomp(b, m=3)
@@ -207,14 +204,6 @@ def vcross(a, b):
     cz = ax * by - ay * bx
     return vcomp((cx,cy,cz))
 
-#Generic functions, usable in this or other projects. No access to global state
-def vnormalize(a):
-    """
-    Calculate the unit vector in a given direction
-    :param a: vector to get direction from
-    :return: unit vector in given direction
-    """
-    return a/vlength(a)
 
 def vncross(a, b):
     """
