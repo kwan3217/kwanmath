@@ -128,6 +128,7 @@ def vcomp(comps):
         axis=0
     return np.stack(comps, axis=axis)
 
+
 def vdecomp(v, m=None, minlen=None, maxlen=None, array=False):
     """
     Decompose a vector into components. an nD stack of m-element vectors will return a tuple with up to m elements,
@@ -182,6 +183,7 @@ def vdecomp(v, m=None, minlen=None, maxlen=None, array=False):
     if np.isscalar(result[0]) and array:
         result = np.array([result])
     return result
+
 
 def vcross(a, b):
     """
