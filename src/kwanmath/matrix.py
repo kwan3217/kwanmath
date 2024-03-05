@@ -11,7 +11,7 @@ uses in other places
 import numpy as np
 from .vector import vncross, vnormalize
 
-def rot_axis(axis,theta):
+def rot_axis(axis,theta=None,*,c=None,s=None):
     """
     Rotate an object around the given reference axis
     by the given amount
@@ -94,37 +94,39 @@ def rot_axis(axis,theta):
     carefully if the rotation sense really is the same
     before using these functions.
     """
-    c=np.cos(theta)
-    s=np.sin(theta)
+    if c is None:
+        c=np.cos(theta)
+    if s is None:
+        s=np.sin(theta)
     result=np.identity(3)
     result[(axis+1)%3,(axis+1)%3]=c; result[(axis+1)%3,(axis+2)%3]=-s
     result[(axis+2)%3,(axis+1)%3]=s; result[(axis+2)%3,(axis+2)%3]= c
     return result
 
 
-def rot_x(theta):
+def rot_x(theta=None,*,c=None,s=None):
     """
     Rotation matrix around X axis
     :param theta: Rotation angle in radians, right-handed
     :return: Rotation matrix in form of (3,3) 2D numpy array
     """
-    return rot_axis(0,theta)
+    return rot_axis(0,theta,c=c,s=s)
 
-def rot_y(theta):
+def rot_y(theta=None,*,c=None,s=None):
     """
     Rotation matrix around Y axis
     :param theta: Rotation angle in radians, right-handed
     :return: Rotation matrix in form of (3,3) 2D numpy array
     """
-    return rot_axis(1,theta)
+    return rot_axis(1,theta,c=c,s=s)
 
-def rot_z(theta):
+def rot_z(theta=None,*,c=None,s=None):
     """
     Rotation matrix around Z axis
     :param theta: Rotation angle in radians, right-handed
     :return: Rotation matrix in form of (3,3) 2D numpy array
     """
-    return rot_axis(2,theta)
+    return rot_axis(2,theta,c=c,s=s)
 
 def point_toward(*, p_b, p_r, t_b, t_r):
     """
@@ -178,3 +180,15 @@ def Mv(Ms):
     return Ms[...,3:,3:]
 
 
+def isrot(R):
+    """
+    Checks if a matrix is a valid rotation matrix.
+
+    :param R:
+    :return:
+    """
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype=R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
