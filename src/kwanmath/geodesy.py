@@ -1,6 +1,8 @@
 """
 Geodesy and gravity calculations
 """
+from collections import namedtuple
+
 from .vector import vdecomp, vlength, vcomp, rv
 from typing import Union
 import numpy as np
@@ -107,7 +109,7 @@ def lla2xyz(*,centric:bool,lat_deg:Union[float,np.array]=None, lat_rad:float=Non
     else:
         # From "Geodetic to Cartesian" of Borkowski paper
         # http://www.astro.uni.torun.pl/~kb/Papers/geod/Geod-BG.htm
-        psi = np.arctan(rp * np.tan(lat_radr) / re)  # Reduced latitude
+        psi = np.arctan(rp * np.tan(lat_rad) / re)  # Reduced latitude
         r = re * np.cos(psi)
         z = rp * np.sin(psi)
         if alt is not None:
@@ -118,7 +120,7 @@ def lla2xyz(*,centric:bool,lat_deg:Union[float,np.array]=None, lat_rad:float=Non
     return vcomp((x, y, z))
 
 
-def xyz2lla(*,centric:bool, deg:bool, xyz:np.array, re:float, rp:float, east:bool=True):
+def xyz2lla(*,centric:bool, deg:bool, xyz:np.array, re:float, rp:float, east:bool=True,array:bool=False):
     """
     Transform rectangular coordinates to geodetic coordinates.
 
@@ -145,7 +147,7 @@ def xyz2lla(*,centric:bool, deg:bool, xyz:np.array, re:float, rp:float, east:boo
 
     """
     # Transform the input arguments from a stack of vectors to 3 arrays of coordinates
-    x,y,z=vdecomp(xyz,array=True)
+    x,y,z=vdecomp(xyz,array=array)
     # Nothing special about longitude, except that this always gives longitude
     # from -180deg to +180deg. Positive is EAST if east= parameter is True (default).
     lon = np.arctan2(y, x) * (1 if east else -1)
@@ -217,7 +219,7 @@ def xyz2lla(*,centric:bool, deg:bool, xyz:np.array, re:float, rp:float, east:boo
     lat[nominal] = np.arctan((1.0 - t * t) / (2 * b[nominal] * t));
     alt[nominal] = (r[nominal] - t) * np.cos(lat[nominal]) + (z[nominal] - b[nominal]) * np.sin(lat[nominal]);
     result = namedtuple('xyz2lla', ['lat', 'lon', 'alt'])
-    return result(np.rad2deg(lat) if deg else lat, np.rad2def(lon) if deg else lon, alt * re)
+    return result(np.rad2deg(lat) if deg else lat, np.rad2deg(lon) if deg else lon, alt * re)
 
 
 
