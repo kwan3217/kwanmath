@@ -222,6 +222,53 @@ def xyz2lla(*,centric:bool, deg:bool, xyz:np.array, re:float, rp:float, east:boo
     return result(np.rad2deg(lat) if deg else lat, np.rad2deg(lon) if deg else lon, alt * re)
 
 
+def ray_sphere_intersect(r0, v, re):
+    """
+    Calculate the point of intersection between a given ray r(t)=r0+v*t and a sphere dot(r,r)=re**2
+
+    :param numpy vector r0: initial point of ray
+    :param numpy vector v:  direction of ray. If this is a unit vector, then the units of t returned will be
+                            the same as the units of r0
+    :param float re: radius of sphere
+    :return: tuple, first element is ray parameter, second is intersect point.
+
+    Parametric equation for a ray
+      r(t)=r0+v*t
+    Equation for a sphere of radius r_m
+      dot(r,r)=re**2
+    solve simultaneous equations
+      dot(r0+v*t,r0+v*t)=re**2
+      (rx+vx*t)**2+                           #expand dot product to components
+      (ry+vy*t)**2+
+      (rz+vz*t)**2=r_m**2
+      (r_+v_*t)**2=r_**2+2*r_*v_*t+v_**2*t**2 #square each term
+      rx**2+2*rx*vx*t+vx**2*t**2+             #substitute terms
+      ry**2+2*ry*vy*t+vy**2*t**2+
+      rz**2+2*rz*vz*t+vz**2*t**2=r_m**2
+      t**2*(vx**2  +vy**2  +vz**2  )+         #gather into coefficients of P(t)
+      t**1*(2*rx*vx+2*ry*vy+2*rz*vz)+
+      t**0*(rx**2  +ry**2  +rz**2  )=re**2
+      t**2*dot(v,v)+                          #recognize dot products
+      t**1*2*dot(r0,v)+
+      t**0*dot(r,r)=re**2
+    So, the quadratic coefficients are:
+      * A=dot(v,v)
+      * B=2*dot(r0,v)
+      * C=dot(r0,r0)-re**2
+    """
+    A = np.dot(v, v)
+    B = 2 * np.dot(r0, v)
+    C = np.dot(r0, r0) - re ** 2
+    D = B ** 2 - 4 * A * C
+    # Since A is positive, it is always the case that using the negative sign will give the
+    # lower root, which is what we want. If this root is negative, then the spacecraft is
+    # inside the sphere or the sphere is behind the spacecraft.
+    t = (-B - np.sqrt(D)) / 2 * A
+    # Finish using the ray equation to find the coordinates of p1 from the spacecraft pos/vel
+    return (t, r0 + v * t)
+
+
+
 
 
 
