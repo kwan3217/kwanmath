@@ -3,7 +3,7 @@ Geodesy and gravity calculations
 """
 from collections import namedtuple
 
-from .vector import vdecomp, vlength, vcomp, rv
+from .vector import vdecomp, vlength, vcomp, rv, vdot
 from typing import Union
 import numpy as np
 
@@ -256,9 +256,9 @@ def ray_sphere_intersect(r0, v, re):
       * B=2*dot(r0,v)
       * C=dot(r0,r0)-re**2
     """
-    A = np.dot(v, v)
-    B = 2 * np.dot(r0, v)
-    C = np.dot(r0, r0) - re ** 2
+    A = vdot(v, v)
+    B = 2 * vdot(r0, v)
+    C = vdot(r0, r0) - re ** 2
     D = B ** 2 - 4 * A * C
     # Since A is positive, it is always the case that using the negative sign will give the
     # lower root, which is what we want. If this root is negative, then the spacecraft is
