@@ -23,18 +23,29 @@ def xyz2llr(sv,deg=False):
         lon=np.rad2deg(lon)
     return(lon,lat,r)
 
-def llr2xyz(*,lat,lon,r=1.0,deg=True):
+def llr2xyz(*,lat:float,lon:float=None,heading:float=None,r:float=1.0,deg:bool=True):
     """
     Calculate rectangular coordinates from spherical coordinates
 
     :param lat: Planetocentric latitude
     :param lon: Planetocentric longitude
+                lon=0 is on prime meridian, return vector will be towards +X
+                lon=90deg, return vector will be towards +Y
+                lon=270deg is same as lon=-90deg, return vector will be towards -Y
+    :param heading: heading east of true north, only used if lon is not passed. With heading:
+                    heading=0 is true north, return vector will be towards +Y
+                    heading=90deg is true east, return vector will be towards +X
     :param r: Radius
     :param deg: True if latitude and longitude are in degrees
     :return: Rectangular coordinates
 
+    Only one of lon= or heading= should be passed. Parameter lon= has priority and is used
+    if both are passed.
+
     Note: Uses array operations. All inputs may be array, but must be broadcastable against each other.
     """
+    if lon is None:
+        lon=(90 if deg else np.pi/2)-heading
     if deg:
         lat=np.deg2rad(lat)
         lon=np.deg2rad(lon)
