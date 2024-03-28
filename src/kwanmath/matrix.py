@@ -9,7 +9,8 @@ uses in other places
 """
 
 import numpy as np
-from .vector import vncross, vnormalize
+from .vector import vnormalize, vcross
+
 
 def rot_axis(axis,theta=None,*,c=None,s=None):
     """
@@ -128,22 +129,73 @@ def rot_z(theta=None,*,c=None,s=None):
     """
     return rot_axis(2,theta,c=c,s=s)
 
-def point_toward(*, p_b, p_r, t_b, t_r):
+
+def euler_matrix(thetas:tuple,axes:tuple=(2,0,2),deg:bool=False)->np.array:
     """
-    Calculate the point-towards transform
-    :param p_b: Body frame point vector
-    :param p_r: Reference frame point vector
-    :param t_b: Body frame toward vector
-    :param t_r: Reference toward vector
-    :return: Mb2r which makes p_r=Mb2r@p_b true, and simultaneously minimizes vangle(t_r,Mb2r@t_b)
+    Return a rotation matrix which performs a rotation indicated by three Euler angles
+
+    :param thetas: Angles, given in order that the rotation will be performed
+    :param axes: Axis identifier for each theta, same order as thetas, x=0,y=1,z=2
+                 Default is useful for aircraft -- roll first, then pitch, then yaw. If done in this order,
+                 nose will be pointing above or below horizon by "pitch" and with azimuth "yaw", no matter
+                 the roll.
+    :param deg: True if the angles are in degrees, default is radians
+    :return: Rotation matrix representing the given Euler angles and axes
+
+    Example: Perform a 20deg roll (rotation around z), followed by a 90deg pitch (rotation
+             around x), followed by a 10deg yaw (rotation around z)
+    M=euler_matrix(thetas=(20,90,10),deg=True)
+
+    Note that frequently you will see rotations specified like this in various papers:
+
+    M=rx(thetax) @ ry(thetay) @ rz(thetaz)
+
+    Note that this rotates first around Z, then y, then x. To do this, we would use:
+
+    M=euler_matrix(thetas=(thetaz,thetay,thetax),axes=(2,1,0))
+
+    where the thetas and axes are specified in the order they are applied, or right-to-left
+    if reading a matrix multiplication.
+
     """
-    s_r=vncross(p_r, t_r)
-    u_r=vncross(p_r, s_r)
-    R=np.stack((vnormalize(p_r).transpose(), s_r.transpose(), u_r.transpose()), axis=2)
-    s_b=vncross(p_b, t_b)
-    u_b=vncross(p_b, s_b)
-    B=np.stack((vnormalize(p_b).transpose(), s_b.transpose(), u_b.transpose()), axis=2)
-    return R @ B.T
+    M=np.identity(3)
+    for theta,axis in zip(thetas,axes):
+        M=rot_axis(axis=axis,theta=np.deg2rad(theta) if deg else theta) @ M
+    return M
+
+
+def point_toward(*,p_b:np.array,
+                   p_r:np.array,
+                   t_b:np.array,
+                   t_r:np.array)->np.array:
+    """
+    Generate the point-toward matrix. This is a matrix M_rb that transforms a
+    vector in a body frame to a vector in a reference frame. The point vector
+    p_b is transformed to be parallel to p_r, and the toward vector t_b is
+    transformed to be as close as possible to t_r.
+    :param p_b: Point body vector
+    :param p_r: Point reference vector
+    :param t_b: Toward body vector
+    :param t_r: Toward reference vector
+    :return: Matrix M_rb that transforms to reference frame from body.
+    If vlength(p_r)==vlength(p_b), then to within floating-point precision,
+    p_r=M_rb @ p_b
+
+    """
+    #Force all inputs to unit-length column vectors
+    ph_r=vnormalize(p_r.reshape(3,1))
+    ph_b=vnormalize(p_b.reshape(3,1))
+    th_r=vnormalize(t_r.reshape(3,1))
+    th_b=vnormalize(t_b.reshape(3,1))
+    sh_r=vnormalize(vcross(ph_r,th_r))
+    sh_b=vnormalize(vcross(ph_b,th_b))
+    uh_r=vnormalize(vcross(ph_r,sh_r))
+    uh_b=vnormalize(vcross(ph_b,sh_b))
+    R=np.hstack((ph_r,sh_r,uh_r))
+    B=np.hstack((ph_b,sh_b,uh_b))
+    M_rb=R @ B.T
+    return M_rb
+
 
 def Mtrans(M,*vs):
     """
