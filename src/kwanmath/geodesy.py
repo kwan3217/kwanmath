@@ -7,15 +7,15 @@ from .vector import vdecomp, vlength, vcomp, rv, vdot
 from typing import Union
 import numpy as np
 
-def xyz2llr(sv,deg=False):
+def xyz2llr(v,deg=False):
     """
     Calculate spherical coordinates of state
-    :param sv: State vector, can be stack
+    :param v: column vector, can be stack
     :param deg: If true, return angles in degrees instead of radians
-    :return: tuple of (lon,lat,r). Each will be an array iff sv is a stack
+    :return: tuple of (lon,lat,r). Each will be an array iff v is a stack
     """
-    x,y,z=vdecomp(rv(sv))
-    r=vlength(rv(sv))
+    x,y,z=vdecomp(v)
+    r=vlength(v)
     lat=np.arcsin(z/r)
     lon=np.arctan2(y,x)
     if deg:
