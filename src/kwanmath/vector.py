@@ -1,3 +1,5 @@
+from numbers import Number
+
 import numpy as np
 
 def vindex(v):
@@ -254,4 +256,46 @@ def vv(sv):
     :return: Position part, will be stack matching sv
     """
     return sv[3:,:]
+
+
+def where(condition:bool|np.ndarray, x:Number|np.ndarray, y:Number|np.ndarray)->Number|np.ndarray:
+    """
+    A wrapper around np.where to handle scalar inputs and outputs.
+
+    This function returns a scalar where that makes sense,
+    unlike np.where() which always returns an ndarray, even
+    a single-element one that it considers a scalar.
+
+    :param condition: The condition to evaluate.
+    :param x: Value to return if condition is True.
+    :param y: Value to return if condition is False.
+    :return: Scalar or array based on input types.
+    """
+    is_scalar = not isinstance(condition, np.ndarray) and not isinstance(x,np.ndarray) and not isinstance(y,np.ndarray)
+    result = np.where(condition, x, y)
+    if is_scalar and isinstance(result,np.ndarray):
+        return result.item()
+    return result
+
+
+def select(condlist:list[bool|np.ndarray], choicelist:list[Number|np.ndarray], default:Number|np.ndarray=0)->Number|np.ndarray:
+    """
+    A wrapper around np.select to handle scalar inputs and outputs.
+
+    This function returns a scalar where that makes sense,
+    unlike np.select() which always returns an ndarray, even
+    a single-element one that it considers a scalar.
+
+    :param condlist: The condition to evaluate.
+    :param x: Value to return if condition is True.
+    :param y: Value to return if condition is False.
+    :return: Scalar or array based on input types.
+    """
+    is_scalar = np.all([not isinstance(cond, np.ndarray) for cond in condlist]+
+                       [not isinstance(choice, np.ndarray) for choice in choicelist]+
+                       [not isinstance(default, np.ndarray)])
+    result = np.select(condlist, choicelist, default=default)
+    if is_scalar and isinstance(result,np.ndarray):
+        return result.item()
+    return result
 
