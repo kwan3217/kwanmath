@@ -1,5 +1,11 @@
 """
-Describe purpose of this script here
+This script contains functions for fitting, evaluating, and identifying properties of conic sections in 2D space.
+
+Functions:
+- fit_conic: Fits a conic section to a given set of 2D points and returns the coefficients.
+- eval1_conic: Evaluates the conic section using the two-branch method to get x and y coordinates for plotting.
+- identify_conic: Identifies the properties (center, semimajor axis, semiminor axis) of the conic section.
+- eval2_conic: Evaluates the conic section and returns points for plotting.
 
 Created: 2/5/25
 """
