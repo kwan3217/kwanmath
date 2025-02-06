@@ -19,6 +19,10 @@ classifiers = [
 dependencies=[
     "scipy",
 ]
+[project.optional-dependencies]
+test = [
+    "pytest"
+]
 
 [project.urls]
 Homepage = "https://github.com/kwan3217/kwanmath/"
