@@ -233,9 +233,6 @@ def identify_conic(Ap:float, Bp:float, Cp:float, Dp:float, Ep:float, scale:float
     t=avp[:,switch]
     avp[:,switch]=bvp[:,switch]
     bvp[:,switch]=t
-    t=ap[switch]
-    ap[switch]=bp[switch]
-    bp[switch]=t
     # Correct the vectors for scale and return
     cv=cvp*scale
     av=avp*scale
