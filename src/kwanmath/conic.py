@@ -162,7 +162,7 @@ def eval1_conic(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float=1.0)->t
     return x,y0,y1
 
 
-def identify_conic_grok(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float=1.0)->tuple[np.ndarray,np.ndarray,np.ndarray]:
+def identify_conic(Ap:float, Bp:float, Cp:float, Dp:float, Ep:float, scale:float=1.0)->tuple[np.ndarray,np.ndarray,np.ndarray]:
     """
     Identify the properties of a conic described by the given coefficients
     :param Ap: Coefficient of xp**2
@@ -171,70 +171,44 @@ def identify_conic_grok(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float
     :param Dp: coefficient of xp
     :param Ep: coefficient of yp
     :param scale: Scale factor to apply to return results, should equal that passed to fit_conic
-    :return: Tuple of 2-element column vectors:
+    :return: Tuple of 2-element column vectors, all with scaling applied to be in original input units:
       * center of ellipse
-      * Direction and length of one semi-axis
-      * Direction and length of the other semi-axis
-    """
-    # Step 1 - is it an ellipse?
-    delta=Bp**2-4*Ap*Cp
-    if np.any(delta>=0):
-        raise ValueError("Not an ellipse")
-    # Step 2 - identify the center of the ellipse
-    hp=(2*Cp*Dp-Bp*Ep)/-delta
-    kp=(2*Ap*Ep-Bp*Dp)/-delta
-    cpv=np.row_stack((hp,kp))
-    # Step 3 - identify the rotation angle. We will go through trig-land.
-    # There is a bunch of trig identity which could simplify this but
-    # I don't care right now. We'll get this working first then try
-    # to simplify.
-    tan2q=Bp/(Ap-Cp)
-    #   Handle the circular case. These would otherwise have Bp/0=+-inf or NaN.
-    tan2q[Ap==Cp]=0.0
-    twoq=np.arctan(tan2q)
-    q=twoq/2
-    s=np.sin(q)
-    s2=s**2
+      * Direction and length of semimajor axis
+      * Direction and length of semiminor axis
+    The code carefully figures out which axis is longer and returns the longer one before the shorter one.
+    With this you can do things like:
+    ```
+    cv,av,bv
+    M=np.column_stack((av,bv))
+    q=np.arange(0,2*np.pi,0.01)
     c=np.cos(q)
-    c2=c**2
-    # Step 4 - length of the axes.
-    App=Ap*c2+Bp*s*c+Cp*s2
-    Cpp=Ap*s2-Bp*s*c+Cp*c2
-    ap=np.sqrt(1/App)
-    bp=np.sqrt(1/Cpp)
-    # Step 5 - direction of the axes. App is the one that is in the direction
-    # theta and Cpp is in the direction theta+pi/2. We can do this without
-    # going through trig-land.
-    apv=ap*np.row_stack((c,s))
-    bpv=bp*np.row_stack((-s,c))
-    av=apv*scale
-    bv=bpv*scale
-    cv=cpv*scale
-    return cv,av,bv
+    s=np.sin(q)
+    ru=np.row_stack((c,s))
+    re=M@ru+cv
+    ```
+    Based on algorithm from https://en.wikipedia.org/wiki/Matrix_representation_of_conic_sections#Central_conics
+    as of 2025-02-05
+    In particular we use the "alternative approach" to finding the center, and the eigenvector and eigenvalue
+    method for getting the axes.
 
-
-def identify_conic_wiki(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float=1.0)->tuple[np.ndarray,np.ndarray,np.ndarray]:
-    """
-    Identify the properties of a conic described by the given coefficients
-    :param Ap: Coefficient of xp**2
-    :param Bp: Coefficient of xp*yp
-    :param Cp: coefficient of yp**2
-    :param Dp: coefficient of xp
-    :param Ep: coefficient of yp
-    :param scale: Scale factor to apply to return results, should equal that passed to fit_conic
-    :return: Tuple of 2-element column vectors:
-      * center of ellipse
-      * Direction and length of one semi-axis
-      * Direction and length of the other semi-axis
+    This code might handle multiple ellipses if the coefficients properly broadcast,
+    but it hasn't been tested for this yet.
     """
     Fp=-1.0 # Doesn't scale since it doesn't multiply either x or y
+    # Create the two matrices. This one is the _matrix of the quadratic equation_...
     Aqp=np.row_stack((np.column_stack((Ap,Bp/2,Dp/2)),
                       np.column_stack((Bp/2,Cp,Ep/2)),
                       np.column_stack((Dp/2,Ep/2,Fp))))
+    # and this one is the _matrix of the quadratic form_ IE only dealing with terms
+    # of power exactly 2.
     A33p=Aqp[0:2,0:2]
+    # Figure the center point by the "alternative approach"
     cvp=np.linalg.inv(A33p) @ np.row_stack((-Dp/2,
                                             -Ep/2))
+    # Figure the K constant, the ratio of the determinants
     Kp=-np.linalg.det(Aqp)/np.linalg.det(A33p)
+    # Find the eigenvectors and eigenvalues, being careful
+    # how to dissect the eigenvectors out of the return result
     (lam1p,lam2p),v=np.linalg.eig(A33p)
     v1=v[:,0]
     v2=v[:,1]
@@ -247,10 +221,22 @@ def identify_conic_wiki(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float
     #1/bp**2=lam2p/Kp
     #bp**2=Kp/lam2p
     #bp=sqrt(Kp/lam2p)
+    # Figure the axis length that goes with each eigenvector
     ap=np.sqrt(Kp/lam1p)
     bp=np.sqrt(Kp/lam2p)
+    # Multiply by the (unit) vector direction to get the axis vector
     avp=ap*v1
     bvp=bp*v2
+    # For those cases where the a axis is shorter than the b axis, swap them
+    # so a is always the major axis.
+    switch=ap<bp
+    t=avp[:,switch]
+    avp[:,switch]=bvp[:,switch]
+    bvp[:,switch]=t
+    t=ap[switch]
+    ap[switch]=bp[switch]
+    bp[switch]=t
+    # Correct the vectors for scale and return
     cv=cvp*scale
     av=avp*scale
     bv=bvp*scale
@@ -272,7 +258,7 @@ def eval2_conic(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float=1.0)->n
     c=np.cos(q)
     s=np.sin(q)
     v=np.row_stack((c,s))
-    cv,av,bv=identify_conic_wiki(Ap,Bp,Cp,Dp,Ep,scale)
+    cv,av,bv=identify_conic(Ap, Bp, Cp, Dp, Ep, scale)
     M=np.column_stack((av,bv))
     result=M@v+cv
     return result
