@@ -1,5 +1,4 @@
 """
-"""
 This script contains functions for fitting, evaluating, and identifying properties of conic sections in 2D space.
 
 Functions:
