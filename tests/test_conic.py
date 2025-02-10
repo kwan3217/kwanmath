@@ -6,7 +6,7 @@ Created: 2/5/25
 import numpy as np
 import pytest
 
-from kwanmath.conic import fit_conic, eval1_conic, eval2_conic
+from kwanmath.conic import fit_conic, eval1_conic, eval2_conic, vector_to_conic
 
 test_x=np.array((603, 549, 531, 555, 601))
 test_y=np.array((230, 257, 306, 361, 380))
@@ -60,6 +60,21 @@ def test_eval2_conic(x,y,scale):
     plt.plot(x,y,'-')
     plt.axis('scaled')
     plt.pause(1)
+    assert np.allclose(A*x**2+B*x*y+C*y**2+D*x+E*y,1)
+
+
+def test_vector_to_conic():
+    """
+    Test vector_to_conic() by round trip. Make sure that cv+-av and cv+-bv satisfy conic equation
+    :return: None, but raises an exception if the test fails
+    """
+    cv=np.array([[3.0],[4.0]])
+    av=np.array([[2.0],[1.0]])
+    bv=np.array([[-1.0],[2.0]])
+    A,B,C,D,E,rr=vector_to_conic(cv=cv,av=av,bv=bv,scale=1,get_points=True)
+    r=np.hstack((cv+av,cv-av,cv+bv,cv-bv,rr))
+    x=r[0,:]
+    y=r[1,:]
     assert np.allclose(A*x**2+B*x*y+C*y**2+D*x+E*y,1)
 
 
