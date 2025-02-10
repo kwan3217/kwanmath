@@ -267,6 +267,30 @@ def eval2_conic(Ap:float,Bp:float,Cp:float,Dp:float,Ep:float,scale:float=1.0)->n
     return result
 
 
+def vector_to_conic(*,cv:np.ndarray,av:np.ndarray,bv:np.ndarray,scale:float=1.0,get_points:bool=False):
+    """
+    Calculate the A-E coefficients given the center and principal axis vectors
+    :param cv: Center of ellipse
+    :param av: Vector with length equal to semimajor axis and direction of that principal axis
+    :param bv: Vector with length equal to semiminor axis and direction of that principal axis
+    :param scale: Pass along to fit_conic
+    :param get_points: If True, return the points we generate too as another element of the tuple
+    :return: A tuple:
+      Ap,Bp,Cp,Dp,Ep scaled conic coefficients
+      points: 2x5 numpy array of column vectors of 5 points on the ellipse
+    """
+    q = np.arange(5) / 5 * 2 * np.pi
+    c = np.cos(q)
+    s = np.sin(q)
+    vu = np.row_stack((c, s))
+    M = np.column_stack((av, bv))
+    ve = M @ vu + cv.reshape(-1, 1)
+    Ap, Bp, Cp, Dp, Ep = fit_conic(ve, scale=scale)
+    result=(Ap,Bp,Cp,Dp,Ep)
+    if get_points:
+        result=result+(ve,)
+    return result
+
 
 
 
