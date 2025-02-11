@@ -9,7 +9,7 @@ uses in other places
 """
 
 import numpy as np
-from .vector import vnormalize, vcross
+from kwanmath.vector import vnormalize, vcross, vcomp, vlength, vdecomp
 
 
 def rot_axis(axis,theta=None,*,c=None,s=None):
@@ -244,3 +244,92 @@ def isrot(R):
     I = np.identity(3, dtype=R.dtype)
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < 1e-6
+
+
+def m_to_aa(M_rb:np.ndarray,deg:bool=False)->np.ndarray:
+    """
+    Given a matrix which transforms a vector from body coordinates to
+    reference coordinates, calculate the axis-and-angle with vector
+    magnitude encoding of the angle.
+    :param M_rb: Matrix which transforms a vector v_b from body
+                 to reference. Must be a valid rotation matrix
+    :param deg:  If True, the returned vector length represents an angle
+                 in degrees; otherwise, in radians. Default is False (radians).
+    :return: Vector with direction as axis of rotation and length
+             as angle
+    """
+    # Check that M_rb is in fact in SO(3)
+    if not np.allclose(M_rb @ M_rb.T, np.eye(3)) or not np.isclose(np.linalg.det(M_rb), 1):
+        raise ValueError("Input matrix is not a valid rotation matrix")
+
+    # Compute the trace of the matrix
+    trace = np.trace(M_rb)
+
+    # Case for theta = 0 (no rotation)
+    if trace == 3:
+        return vcomp((0.0,0.0,0.0))  # or any vector with zero magnitude
+
+    # Angle of rotation
+    theta = np.arccos((trace - 1) / 2.0)
+
+    # Axis of rotation
+    if theta != 0:
+        sin_theta = np.sin(theta)
+        axis = vcomp((
+            (M_rb[2, 1] - M_rb[1, 2]) / (2 * sin_theta),
+            (M_rb[0, 2] - M_rb[2, 0]) / (2 * sin_theta),
+            (M_rb[1, 0] - M_rb[0, 1]) / (2 * sin_theta)
+        ))
+    else:
+        # If theta is zero, any axis is valid, here we just use [1, 0, 0] for simplicity
+        axis = vcomp((1., 0., 0.))
+
+    # Normalize axis to unit length
+    axis = axis / vlength(axis)
+
+    # Combine axis and angle
+    if deg:
+        theta=np.rad2deg(theta)
+    return theta * axis
+
+
+def aa_to_m(aa_vector,deg:bool=False):
+    """
+    Convert an axis-angle representation, where the angle is encoded in the vector's magnitude,
+    back to a rotation matrix. This is intended to be the inverse of m_to_aa, such that
+    m_to_aa(aa_to_m(aa))==aa.
+
+    :param aa_vector:  Vector where the direction indicates the axis of rotation and the magnitude
+                       represents the angle of rotation.
+    :param deg:        If True, the vector length represents an input angle in degrees; otherwise,
+                       in radians. Default is False (radians).
+    :return:
+    """
+    # Extract the angle from the length of the vector
+    theta = vlength(aa_vector)
+
+    # If theta is zero, return identity matrix (no rotation)
+    if theta == 0:
+        return np.eye(3)
+
+    # Normalize the vector to get the axis of rotation
+    axis = aa_vector / theta
+    if deg:
+        theta=np.deg2rad(theta)
+
+    # Components of the axis
+    x, y, z = vdecomp(axis)
+
+    # Compute the cosine and sine of theta
+    c = np.cos(theta)
+    s = np.sin(theta)
+    C = 1 - c
+
+    # Construct the rotation matrix
+    M_rb = np.array([
+        [x*x*C + c,   x*y*C - z*s, x*z*C + y*s],
+        [y*x*C + z*s, y*y*C + c,   y*z*C - x*s],
+        [z*x*C - y*s, z*y*C + x*s, z*z*C + c  ]
+    ])
+
+    return M_rb

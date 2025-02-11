@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from kwanmath.geodesy import llr2xyz
-from kwanmath.matrix import rot_axis, euler_matrix, point_toward
-from kwanmath.vector import vcomp
+from kwanmath.matrix import rot_axis, euler_matrix, point_toward, aa_to_m, m_to_aa
+from kwanmath.vector import vcomp, vnormalize
 
 
 @pytest.mark.parametrize(
@@ -136,3 +136,9 @@ def test_point_toward(p_b:np.ndarray,p_r:np.ndarray,t_b:np.ndarray,t_r:np.ndarra
     assert np.allclose(p_r,test_Mrb @ p_b)
     assert np.allclose(p_r,ref_Mrb @ p_b)
 
+
+def test_axis_angle():
+    ref_aa=45.0*vnormalize(vcomp((1.0,1.0,1.0)))
+    M_rb=aa_to_m(ref_aa,deg=True)
+    test_aa=m_to_aa(M_rb,deg=True)
+    assert np.allclose(test_aa,ref_aa)
