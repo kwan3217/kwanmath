@@ -6,7 +6,7 @@ Created: 1/23/25
 import numpy as np
 import pytest
 
-from kwanmath.vector import where, select
+from kwanmath.vector import where, select, vcomp, vangle
 
 
 @pytest.mark.parametrize(
@@ -42,3 +42,14 @@ def test_select(condlist, choicelist, default, out, t):
     print(type(s), s)
     assert np.all(s == out)
     assert type(s) == t
+
+
+@pytest.mark.parametrize(
+    "a,b,deg,result",
+    [(vcomp((1,0,0)),vcomp((0,1,0)),True,90.0),
+     (vcomp((1,0,0)),vcomp((1,1,0)),True,45.0),
+     (vcomp((1,0,0)),vcomp((1,1,0)),False,np.pi/4.0),
+     ]
+)
+def test_vangle(a:np.ndarray,b:np.ndarray,deg:bool,result:np.ndarray):
+    assert np.allclose(vangle(a,b,deg=deg),result)
