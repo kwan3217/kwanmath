@@ -6,7 +6,7 @@ import pytest
 
 from kwanmath.geodesy import llr2xyz
 from kwanmath.matrix import rot_axis, euler_matrix, point_toward, aa_to_m, m_to_aa
-from kwanmath.vector import vcomp, vnormalize
+from kwanmath.vector import vcomp, vnormalize, vlength
 
 
 @pytest.mark.parametrize(
@@ -142,3 +142,14 @@ def test_axis_angle():
     M_rb=aa_to_m(ref_aa,deg=True)
     test_aa=m_to_aa(M_rb,deg=True)
     assert np.allclose(test_aa,ref_aa)
+
+
+def test_small_aa():
+    ref_aa=1e-99*vnormalize(vcomp((1.0,1.0,1.0)))
+    assert vlength(ref_aa)!=0.0, "ref_aa too small, indistinguishable from 0"
+    M_rb=aa_to_m(ref_aa,deg=True)
+    trace=np.trace(M_rb)
+    assert trace==3.0, f"ref_aa not small enough to test this case, {trace.hex()}!={(3.0).hex()}"
+    test_aa=m_to_aa(M_rb,deg=True)
+    print(ref_aa,test_aa)
+    assert np.isclose(vlength(ref_aa),vlength(test_aa),atol=0)

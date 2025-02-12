@@ -267,7 +267,18 @@ def m_to_aa(M_rb:np.ndarray,deg:bool=False)->np.ndarray:
 
     # Case for theta = 0 (no rotation)
     if trace == 3:
-        return vcomp((0.0,0.0,0.0))  # or any vector with zero magnitude
+        # In this case, the matrix is:
+        #       [ 1 -z  y]
+        # M_rb= [ z  1 -x]
+        #       [-y  x  1]
+        # where [[x],[y],[z]] has magnitude ~sin(theta) and correct direction
+        # but the angle is so small that sin(theta)~=theta in radians. with error O(epsilon**3)
+        result=vcomp((M_rb[2, 1],
+                      M_rb[0, 2],
+                      M_rb[1, 0]))  # Use the (noninverted) off-diagonal values
+        if deg:
+            result=np.rad2deg(result)
+        return result
 
     # Angle of rotation
     theta = np.arccos((trace - 1) / 2.0)
@@ -312,7 +323,9 @@ def aa_to_m(aa_vector,deg:bool=False):
     if theta == 0:
         return np.eye(3)
 
-    # Normalize the vector to get the axis of rotation
+    # Normalize the vector to get the axis of rotation. We do this
+    # before converting theta to radians, because that's what is
+    # needed to get a unit vector.
     axis = aa_vector / theta
     if deg:
         theta=np.deg2rad(theta)
