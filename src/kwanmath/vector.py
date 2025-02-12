@@ -79,13 +79,14 @@ def vnormalize(v):
     return v/vlength(v)
 
 
-def vangle(a, b, array=False):
+def vangle(a, b, array=False, deg:bool=False):
     """
     Compute the angle between two vectors
 
     :param a: (stack of) first  vector operand(s)
     :param b: (stack of) second vector operand(s)
     :param array: Passed to vdot and vlength
+    :param deg: If true, return angle in degrees. Otherwise radians by default.
     :return: Angle(s) between two (stacks of) vectors in radians
 
     Note - using true real numbers, it is impossible for the dot product to be
@@ -105,7 +106,11 @@ def vangle(a, b, array=False):
             arg=-1
         if arg> 1:
             arg= 1
-    return np.arccos(arg)
+    result=np.arccos(arg)
+    if deg:
+        result=np.rad2deg(result)
+    return result
+
 
 def vcomp(comps):
     """
