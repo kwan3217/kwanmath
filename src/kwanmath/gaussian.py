@@ -59,19 +59,25 @@ _bound_sig=positive()
 _bound_rho=bounded(y0=-1,y1=1)
 
 
-def twoD_Gaussian(x,y,amplitude,xc,yc,sigma_x,sigma_y,rho,offset):
+def twoD_Gaussian(x:np.ndarray,y:np.ndarray,
+                  amplitude:float,
+                  xc:float,yc:float,
+                  sigma_x:float,sigma_y:float,rho:float,
+                  offset:float):
     """
+    Evaluate a two-dimensional Gaussian distribution f(x,y) with given
+    sigma, rho, and center values
 
-    :param x:
-    :param y:
-    :param amplitude:
-    :param xc:
-    :param yc:
-    :param sigma_x:
-    :param sigma_y:
-    :param rho:
-    :param offset:
-    :return:
+    :param x: X coordinates at which to evaluate the Gaussian. May be any dimension
+    :param y: Y coordinates. Must be compatible by broadcast with x
+    :param amplitude: Height of distribution above horizontal asymtote
+    :param xc: Center of distribution in x
+    :param yc: Center of distribution in y
+    :param sigma_x: Standard deviation in x
+    :param sigma_y: Standard deviation in y
+    :param rho: Correlation between x and y
+    :param offset: Height of horizontal asymtote above 0
+    :return: Results in an array with shape from broadcasting x on y.
     """
     xc = float(xc)
     yc = float(yc)
@@ -118,8 +124,9 @@ def correlation_matrix(P:np.array)->np.array:
               element is the covariance sigma_i*sigma_j*rho_ij of
               element i and j
     :return: Correlation matrix. Each on-diagonal element is the
-              standard deviation sigma_i of element i, and each off-diagonal
-              element is the correlation coefficient rho_ij of
+              standard deviation sigma_i of element i, with the same
+              units as element i, and each off-diagonal element is
+              the unitless correlation coefficient rho_ij of
               element i and j
     """
     result=P*0
@@ -130,6 +137,7 @@ def correlation_matrix(P:np.array)->np.array:
             if i!=j:
                 result[i,j]=P[i,j]/result[i,i]/result[j,j]
     return result
+
 
 def fit_twoD_Gaussian(img,dn_size:float=1.0):
     """
@@ -211,6 +219,17 @@ def infamily(calcs:np.array,obss:np.array=None,nsig:float=5.0,weights:np.array=N
       including the vector currently under consideration
     :param weights: 1D array of weights. weighted standard deviation of a family is sqrt(sum(((O-C)*weight)**2)/sum(weight))
     :return: 1D boolean array, true for vectors which are in family, false for those that aren't.
+
+    Algorithm:
+    This edits the data set one point at a time. Each time around, it iterates
+    over each data point. For each point, it figures the covariance of all data
+    EXCEPT for this point, then figures out how many standard deviations away
+    from the center this point is. It tracks which point is the farthest away
+    from the mean, and if this point is more than nsig away, it marks the point
+    as being out of family. It then repeats the whole process while not considering
+    any points that have been edited out. We do it this way because a point which
+    is massively out of family can by itself skew the statistics of the entire
+    dataset.
 
     Known limitations:
     All of these can be fixed, but won't be until we demonstrate a need to do so
