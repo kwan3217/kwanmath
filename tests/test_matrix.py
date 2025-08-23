@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from kwanmath.geodesy import llr2xyz
-from kwanmath.matrix import rot_axis, euler_matrix, point_toward, aa_to_m, m_to_aa
+from kwanmath.matrix import rot_axis, euler_matrix, point_toward, aa_to_m, m_to_aa, slerp
 from kwanmath.vector import vcomp, vnormalize, vlength
 
 
@@ -153,3 +153,47 @@ def test_small_aa():
     test_aa=m_to_aa(M_rb,deg=True)
     print(ref_aa,test_aa)
     assert np.isclose(vlength(ref_aa),vlength(test_aa),atol=0)
+
+
+def test_slerp_trivial():
+    M0=np.eye(3)
+    M1=np.array([[ 0.0,-1.0, 0.0],
+                 [ 1.0, 0.0, 0.0],
+                 [ 0.0, 0.0, 1.0]])
+    #Trivial cases: for t=0, we should get M0, and for t=1, we should get M1
+    s=slerp(M0,M1)
+    assert np.allclose(s(0.0),M0)
+    assert np.allclose(s(1.0),M1)
+    # Interesting case: for t=0.5, should have 0.707 in the upper left 2x2. Specifically something like:
+    # x_ct is between +x_u and +y_u, so [.707,.707,0]^T
+    # y_ct is between +y_u and -x_u, so [-.707,.707,0]^T
+    # z_ct is still z_u
+    s2o2=np.sqrt(2.0)/2.0
+    M05_ref=np.array([[s2o2,-s2o2,0.0],
+                      [s2o2, s2o2,0.0],
+                      [   0,    0,1.0]])
+    assert np.allclose(s(0.5),M05_ref)
+
+
+def test_slerp_broadcast():
+    M0=np.eye(3)
+    M1=np.array([[ 0.0,-1.0, 0.0],
+                 [ 1.0, 0.0, 0.0],
+                 [ 0.0, 0.0, 1.0]])
+    t=np.arange(0,1,0.01).reshape(-1,1,1)
+    Mt=slerp(M0,M1,t)
+    assert Mt.shape==(100,3,3)
+
+
+def test_random_slerp():
+    M0=np.array([[1., 0., 0.],
+                 [0., 1., 0.],
+                 [0., 0., 1.]])
+    M1=np.array([[-0.23954104, -0.96908537,  0.05910691],
+                 [ 0.94077109, -0.21663513,  0.2608045 ],
+                 [-0.23993719,  0.11807946,  0.9635805 ]])
+    M05_ref = np.array([[ 6.15975315e-01,-7.82164407e-01, 9.37723430e-02],
+                        [ 7.73392300e-01, 6.23071841e-01, 1.16815373e-01],
+                        [-1.49795733e-01, 5.67422173e-04, 9.88716803e-01]])
+    M05_test=slerp(M0,M1,0.5)
+    assert np.allclose(M05_ref,M05_test)

@@ -7,6 +7,8 @@ uses in other places
   about one of the primary axes.
 * point_toward: Compute the point-toward transformation
 """
+from typing import Optional
+from collections.abc import Callable
 
 import numpy as np
 from kwanmath.vector import vnormalize, vcross, vcomp, vlength, vdecomp
@@ -346,3 +348,71 @@ def aa_to_m(aa_vector,deg:bool=False):
     ])
 
     return M_rb
+
+
+MInterp=Callable[[float|np.ndarray],np.ndarray]
+
+
+def slerp(M0:np.ndarray,M1:np.ndarray,t:Optional[float|np.ndarray]=None,verbose:bool=False)->MInterp:
+    """
+    Currying function, used when we have one set of matrices but many interpolation points. Use it like this:
+    s=slerp(M0,M1)
+    Mta=s(ta)
+    Mtb=s(tb)
+    Mtc=slerp(M0c,M1c,tc) # if you only want one
+
+    :param M0: Initial orientation, in the form of a matrix transforming camera to universe at t=0
+    :param M1: Final orientation, in same form, for t=1
+    :param t: Optional interpolation parameter. If set, evaluate the interpolation and get on with life.
+              If not set, return an interpolator
+    :param verbose:
+    :return: function which takes the interpolation parameter and returns the interpolated orientation
+    """
+
+    P10 = M1.T @ M0
+    if verbose:
+        print(f"{P10=}")
+    trace = P10[0, 0] + P10[1, 1] + P10[2, 2]
+    if verbose:
+        print(f"{trace=}")
+    theta1 = np.arccos((trace - 1) / 2)  # Note, theta matches units with return value of arccos, so radians
+    if verbose:
+        print(f"{theta1=} rad")
+    a = np.array([[P10[2, 1] - P10[1, 2]],
+                  [P10[0, 2] - P10[2, 0]],
+                  [P10[1, 0] - P10[0, 1]]])
+    a /= np.linalg.norm(a)
+    if verbose:
+        print(f"{a=}")
+    ax = np.array([[0, -a[2, 0], a[1, 0]],
+                   [a[2, 0], 0, -a[0, 0]],
+                   [-a[1, 0], a[0, 0], 0]])
+    if verbose:
+        print(f"{ax=}")
+    ax2 = ax @ ax
+    if verbose:
+        print(f"{ax2=}")
+    def slerp_core(t:float|np.ndarray)->np.ndarray:
+        """
+        :param t: interpolation parameter. To be multi-dimensional I think it has to be shape (...,1,1)
+        """
+        theta=t*theta1
+        if verbose:
+            print(theta.shape)
+        Pt0=np.eye(3)
+        if verbose:
+            print(Pt0.shape)
+        Pt0=Pt0+np.sin(theta)*ax
+        if verbose:
+            print(Pt0.shape)
+        Pt0=Pt0+(1-np.cos(theta))*ax2
+        if verbose:
+            print(Pt0.shape)
+        Pt0T=np.matrix_transpose(Pt0)
+        Mt=M0@Pt0T
+        if verbose:
+            print(Mt.shape)
+        return Mt
+    if t is None:
+        return slerp_core
+    return slerp_core(t)
