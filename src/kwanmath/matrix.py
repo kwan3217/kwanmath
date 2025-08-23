@@ -400,6 +400,7 @@ def slerp(M0:np.ndarray,M1:np.ndarray,t:Optional[float|np.ndarray]=None,verbose:
         :param t: interpolation parameter. May be scalar or any shape array. Return value is a single matrix
                   for a scalar or a bundle of matrices of the same shape as t for an array.
         """
+        t = np.asarray(t)                   # Ensure it's an array
         t = t[..., np.newaxis, np.newaxis]  # Add two new axes to create shape (...,1,1) for broadcasting
         theta=t*theta1
         if verbose:
