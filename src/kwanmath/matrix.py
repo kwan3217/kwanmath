@@ -376,7 +376,7 @@ def slerp(M0:np.ndarray,M1:np.ndarray,t:Optional[float|np.ndarray]=None,verbose:
     trace = P10[0, 0] + P10[1, 1] + P10[2, 2]
     if verbose:
         print(f"{trace=}")
-    theta1 = np.arccos((trace - 1) / 2)  # Note, theta matches units with return value of arccos, so radians
+    theta1 = np.arccos(np.clip((trace - 1) / 2, -1.0, 1.0))  # Note, theta matches units with return value of arccos, so radians
     if verbose:
         print(f"{theta1=} rad")
     a = np.array([[P10[2, 1] - P10[1, 2]],
