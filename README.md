@@ -71,6 +71,7 @@ Key functionalities include:
 * Euler Angle Rotations (euler_matrix): Constructs a rotation matrix from a set of Euler angles and specified axes.
 * Point-Toward transformation (point_toward): Computes a matrix that aligns a vector from a body frame to a reference frame, ensuring directional consistency.
 * Axis-Angle Conversions (m_to_aa, aa_to_m): Converts between rotation matrices and axis-angle representations, facilitating intuitive rotational transformations.
+* Spherical linear interpolation (slerp): Interpolates between SO(3) matrices 
 
 # kwanmath.ode
 I am considering deprecating this whole module. It's either simple enough
