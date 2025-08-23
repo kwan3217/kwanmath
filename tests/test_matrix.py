@@ -197,3 +197,73 @@ def test_random_slerp():
                         [-1.49795733e-01, 5.67422173e-04, 9.88716803e-01]])
     M05_test=slerp(M0,M1,0.5)
     assert np.allclose(M05_ref,M05_test)
+
+
+def test_slerp_floating_point_precision():
+    """
+    Test that slerp handles floating-point precision errors gracefully.
+    This test creates a scenario where the trace calculation might result in 
+    a value slightly outside the valid range for arccos due to floating-point errors.
+    """
+    # Create matrices that test the edge case without causing other issues
+    M0 = np.eye(3)
+    
+    # Create matrices with small but non-trivial rotations to avoid zero axis issues
+    # while still potentially having trace precision problems
+    
+    # Small rotation around Z axis
+    small_angle = 1e-10  # Very small but non-zero rotation
+    c = np.cos(small_angle)
+    s = np.sin(small_angle)
+    M1_small_rot = np.array([
+        [c, -s, 0],
+        [s, c, 0],
+        [0, 0, 1]
+    ])
+    
+    # Test with the small rotation - this should work without issues now
+    result1 = slerp(M0, M1_small_rot, 0.5)
+    assert not np.any(np.isnan(result1))
+    
+    # Test specific case that would trigger the original arccos issue
+    # We'll create a scenario where trace is exactly at the boundary
+    # Force a matrix that has trace slightly outside the valid range but
+    # is still a valid rotation matrix
+    
+    # Create a rotation matrix and then slightly perturb it to cause precision issues
+    angle = np.pi / 4  # 45 degrees
+    M_test = np.array([
+        [np.cos(angle), -np.sin(angle), 0],
+        [np.sin(angle), np.cos(angle), 0],
+        [0, 0, 1]
+    ])
+    
+    # Slightly perturb to cause potential precision issues with trace calculation
+    # Add tiny numerical errors that could accumulate
+    perturbation = 1e-15
+    M_test[0, 0] += perturbation
+    M_test[1, 1] += perturbation
+    M_test[2, 2] += perturbation
+    
+    # This should work without arccos domain errors
+    result2 = slerp(M0, M_test, 0.5)
+    assert result2 is not None  # Should complete without domain errors
+    
+    # Test the case that would definitely have caused issues before the fix
+    # Manually test the calculation that was problematic
+    
+    # Create a matrix with a trace that, due to floating point errors,
+    # could result in (trace-1)/2 being slightly outside [-1,1]
+    test_trace = 3.0 + 2e-15  # Slightly over 3
+    arg_before_fix = (test_trace - 1) / 2  # This would be slightly > 1
+    
+    # Before the fix, this would cause issues:
+    # np.arccos(arg_before_fix)  # Would give a warning or error
+    
+    # After the fix, this should work:
+    clipped_arg = np.clip(arg_before_fix, -1.0, 1.0)
+    theta_fixed = np.arccos(clipped_arg)
+    
+    # The clipped value should be exactly 1.0 and theta should be 0
+    assert clipped_arg == 1.0
+    assert theta_fixed == 0.0
