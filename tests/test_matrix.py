@@ -180,7 +180,7 @@ def test_slerp_broadcast():
     M1=np.array([[ 0.0,-1.0, 0.0],
                  [ 1.0, 0.0, 0.0],
                  [ 0.0, 0.0, 1.0]])
-    t=np.arange(0,1,0.01).reshape(-1,1,1)
+    t=np.arange(0,1,0.01)
     Mt=slerp(M0,M1,t)
     assert Mt.shape==(100,3,3)
 

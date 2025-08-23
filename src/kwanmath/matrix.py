@@ -364,7 +364,8 @@ def slerp(M0:np.ndarray,M1:np.ndarray,t:Optional[float|np.ndarray]=None,verbose:
     :param M0: Initial orientation, in the form of a matrix transforming camera to universe at t=0
     :param M1: Final orientation, in same form, for t=1
     :param t: Optional interpolation parameter. If set, evaluate the interpolation and get on with life.
-              If not set, return an interpolator
+              If not set, return an interpolator. If passed, may be a scalar or any shape of array, to
+              get a bundle of matrices the same shape
     :param verbose:
     :return: function which takes the interpolation parameter and returns the interpolated orientation
     """
@@ -392,10 +393,15 @@ def slerp(M0:np.ndarray,M1:np.ndarray,t:Optional[float|np.ndarray]=None,verbose:
     ax2 = ax @ ax
     if verbose:
         print(f"{ax2=}")
+
+    # noinspection PyShadowingNames
     def slerp_core(t:float|np.ndarray)->np.ndarray:
         """
-        :param t: interpolation parameter. To be multi-dimensional I think it has to be shape (...,1,1)
+        :param t: interpolation parameter. May be scalar or any shape array. Return value is a single matrix
+                  for a scalar or a bundle of matrices of the same shape as t for an array.
         """
+        t = np.asarray(t)                   # Ensure it's an array
+        t = t[..., np.newaxis, np.newaxis]  # Add two new axes to create shape (...,1,1) for broadcasting
         theta=t*theta1
         if verbose:
             print(theta.shape)
