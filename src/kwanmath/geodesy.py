@@ -124,8 +124,8 @@ def lla2xyz(*,centric:bool,lat_deg:Union[float,np.array]=None, lat_rad:float=Non
         r = re * np.cos(psi)
         z = rp * np.sin(psi)
         if alt is not None:
-            r += alt * np.cos(lat_rad)  # Distance from rotation axis
-            z += alt * np.sin(lat_rad)  # Distance from equatorial plane
+            r = r + alt * np.cos(lat_rad)  # Distance from rotation axis
+            z = r + alt * np.sin(lat_rad)  # Distance from equatorial plane
     x = r * np.cos(lon_rad)
     y = r * np.sin(lon_rad) * (1 if east else -1)
     return vcomp((x, y, z))
