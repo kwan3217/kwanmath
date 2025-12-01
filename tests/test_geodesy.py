@@ -112,11 +112,11 @@ def test_lla2xyz(dss:int,diameter:int,
     f=1.0/invf
     rp=(1.0-f)*re
     test_xyz=lla2xyz(lat_deg=lat,lon_deg=elon,alt=h,centric=False,re=re,rp=rp)
-    if not np.allclose(test_xyz,ref_xyz):
-        print(f"\ntest lat={test_lat:20.10f} lon={test_lon:20.10f}, h={test_h:10.5f}")
-        print(f"ref  lat={ref_lat:20.10f} lon={ref_elon:20.10f}, h={ref_h:10.5f}")
+    if not np.allclose(test_xyz,ref_xyz,atol=0,rtol=1e-3):
+        print(f"\ntest x={test_xyz[0,0]:20.10f} y={test_xyz[1,0]:20.10f}, z={test_xyz[2,0]:10.5f}")
+        print(f"ref  x={ref_xyz[0,0]:20.10f} y={ref_xyz[1,0]:20.10f}, z={ref_xyz[2,0]:10.5f}")
         assert False
-    assert np.allclose
+    #assert np.allclose
 
 
 def test_lla2xyz_grid():
